@@ -15,48 +15,60 @@ int your_conv( cv::Mat src,
     int kernel_height = kernel.rows;
     int kernel_width = kernel.cols;
 
-    int dst_height;
-    int dst_width;
+    int dst_height = ((src_height-kernel_height+2*padding)/stride + 1)*3;
+    int dst_width = ((src_width-kernel_width+2*padding)/stride + 1)*3;
     
+    int a_height = (src_height-kernel_height+2*padding)/stride + 1;
+    int a_width = (src_height-kernel_height+2*padding)/stride + 1;
+
+    int pad_height = src_height + 2*padding;
+    int pad_width = src_width + 2*padding;
+
     cv::Mat pad1,pad2,pad3,a1,a2,a3;
 
+    a1 = (cv::Mat_<float>(a_height, a_width));
+    a2 = (cv::Mat_<float>(a_height, a_width));
+    a3 = (cv::Mat_<float>(a_height, a_width));
+    pad1 = (cv::Mat_<float>(pad_height, pad_width));
+    pad2 = (cv::Mat_<float>(pad_height, pad_width));
+    pad3 = (cv::Mat_<float>(pad_height, pad_width));
     // src.ptr<unsigned char>(i)[ calculate INDEX ]
-
     // MAKE YOUR OWN CONVOLUTION PROCESS
     for(int i=0; i<src_height; i++){
 		for(int j=0; j<src_width/3; j++){
 			for(int k=j*3; k<j*3+2; k++){
-				pad1<float>(i+padding,j+padding) = src<float>(i,k);
-				pad2<float>(i+padding,j+padding) = src<float>(i,k+1);
-				pad3<float>(i+padding,j+padding) = src<float>(i,k+2);
+				pad1.at<float>(i+padding,j+padding) = src.at<float>(i,k);
+				pad2.at<float>(i+padding,j+padding) = src.at<float>(i,k+1);
+				pad3.at<float>(i+padding,j+padding) = src.at<float>(i,k+2);
 			}
 		}
     }
-    for(int i=0; i<((src_height-kernel_height+2*padding)/stride)+1; i++){
-		for(int j=0; j<((src_width-kernel_width+2*padding)/stride)+1; j++){
+    for(int i=0; i<a_height; i++){
+		for(int j=0; j<a_width; j++){
 			for(int k=0; k<kernel_height; k++){
 				for(int l=0; l<kernel_width; l++){
-					a1<float>(i,j) +=pad1<float>(k+i*stride,l+j*stride)*kernel<float>(l,k);
-					a2<float>(i,j) +=pad2<float>(k+i*stride,l+j*stride)*kernel<float>(l,k);
-					a3<float>(i,j) +=pad3<float>(k+i*stride,l+j*stride)*kernel<float>(l,k);
+					a1.at<float>(i,j) +=pad1.at<float>(k+i*stride,l+j*stride)*kernel.at<float>(l,k,0);
+					a2.at<float>(i,j) +=pad2.at<float>(k+i*stride,l+j*stride)*kernel.at<float>(l,k,1);
+					a3.at<float>(i,j) +=pad3.at<float>(k+i*stride,l+j*stride)*kernel.at<float>(l,k,2);
 				}
 			}
 		}
     }
-    for(int i=0; i<src_height; i++){
-		for(int j=0; j<src_width/3; j++){
-			for(int k=j*3; k<j*3+2; k++){
-				dst<float>(i,j) = a1<float>(i,k);
-				dst<float>(i,j) = a1<float>(i,k+2);
-				dst<float>(i,j) = a1<float>(i,k+3);
+    for(int i=0; i<dst_height; i++){
+		for(int j=0; j<dst_width; j+=3){
+			for(int l=0; l<dst_height/3; l++){
+				int k=j/3;
+				dst.at<float>(i,j) = a1.at<float>(l,k);
+				dst.at<float>(i,j+1) = a2.at<float>(l,k);
+				dst.at<float>(i,j+2) = a3.at<float>(l,k);
 			}
 		}
     }
-
-
-
+    
+    
+    
     // if success
-    return 0
+    return 0;
 
     // if fail - in the case of wrong parameters...
     // return -1
@@ -77,7 +89,9 @@ int main ( int argc, char** argv )
     if( !src.data )  { return -1; }
 
     // Make filter
-    kernel = (cv::Mat_<float>(3, 3) << -1, -1, -1, -1, 8, -1, -1, -1, -1);
+    kernel = (cv::Mat_<float>(3, 3, 3) << -1, -1, -1, -1,  8, -1, -1, -1, -1,
+					   0,  0,  0,  0,  0,  0,  0,  0,  0,
+ 					   0,  0,  0,  0,  0,  0,  0,  0,  0);
 
 
     // Run 2D filter
