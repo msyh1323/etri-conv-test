@@ -17,10 +17,43 @@ int your_conv( cv::Mat src,
 
     int dst_height;
     int dst_width;
+    
+    cv::Mat pad1,pad2,pad3,a1,a2,a3;
 
     // src.ptr<unsigned char>(i)[ calculate INDEX ]
 
     // MAKE YOUR OWN CONVOLUTION PROCESS
+    for(int i=0; i<src_height; i++){
+		for(int j=0; j<src_width/3; j++){
+			for(int k=j*3; k<j*3+2; k++){
+				pad1<float>(i+padding,j+padding) = src<float>(i,k);
+				pad2<float>(i+padding,j+padding) = src<float>(i,k+1);
+				pad3<float>(i+padding,j+padding) = src<float>(i,k+2);
+			}
+		}
+    }
+    for(int i=0; i<((src_height-kernel_height+2*padding)/stride)+1; i++){
+		for(int j=0; j<((src_width-kernel_width+2*padding)/stride)+1; j++){
+			for(int k=0; k<kernel_height; k++){
+				for(int l=0; l<kernel_width; l++){
+					a1<float>(i,j) +=pad1<float>(k+i*stride,l+j*stride)*kernel<float>(l,k);
+					a2<float>(i,j) +=pad2<float>(k+i*stride,l+j*stride)*kernel<float>(l,k);
+					a3<float>(i,j) +=pad3<float>(k+i*stride,l+j*stride)*kernel<float>(l,k);
+				}
+			}
+		}
+    }
+    for(int i=0; i<src_height; i++){
+		for(int j=0; j<src_width/3; j++){
+			for(int k=j*3; k<j*3+2; k++){
+				dst<float>(i,j) = a1<float>(i,k);
+				dst<float>(i,j) = a1<float>(i,k+2);
+				dst<float>(i,j) = a1<float>(i,k+3);
+			}
+		}
+    }
+
+
 
     // if success
     return 0
